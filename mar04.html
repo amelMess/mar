@@ -1,0 +1,234 @@
+<html>
+	<head>
+		<title>MAR 2014 - example 3 by RC&FL</title> 
+		<style> body { margin: 0; } canvas { width: 100%; height: 100% } </style> 
+	</head> 
+	<body>
+		<script src="threejs/build/three.min.js"></script>
+		<script src="js/loaders/MTLLoader.js"></script>
+		<script src="js/loaders/OBJMTLLoader.js"></script>
+		<script src="js/Detector.js"></script>
+		<script src="js/libs/stats.min.js"></script>
+		<script src="myJS/grid.js"></script>
+
+		<script id="vertexShaderMetal" type="x-shader/x-vertex">
+			// metal per fragment -vertex shader
+			//-----------------------------------------------------------------
+			// built in uniform and attributes
+			// vec3 position, normal;
+			// mat4 projectionMatrix, mat4 modelViewMatrix, normalMatrix;
+			//-----------------------------------------------------------------
+			// custom varying
+			// normals
+			varying vec3 vNormal;
+			varying vec4 vPosition;
+			// main
+			void main() {
+			vNormal = normalMatrix * normalize(vec3(normal));
+			vPosition = modelViewMatrix * vec4(position, 1.0);
+			gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+			}
+		</script>
+		
+		<script id="fragmentShaderMetal" type="x-shader/x-fragment">
+			//uniforms
+			uniform vec3 color;
+			uniform float kd ;
+			uniform float sh ;
+			// custum varying
+			// input from vertex shader
+			varying vec3 vNormal;
+			varying vec4 vPosition;
+			// main
+			void main(void) {
+				// material spec
+				float ks = 1.0 - kd;
+				// ambient
+				vec3 amb = vec3(0.0,0.0,0.25);
+				// lights color1
+				vec3 lightC1 = vec3(1.0,1.0,0.5);
+				vec3 lightC2 = vec3(1.0,0.5,1.0);
+				// light1, light2 direction
+				vec3 lightDirection1 = normalize(vec3(-1.0, 1.0, 1.0));
+				vec3 lightDirection2 = normalize(vec3(1.0, 1.0, -1.0));
+				// shniness
+				// normalize normal
+				vec3 normal = normalize(vNormal);
+				// eye direction
+				vec3 eyeDirection = normalize(-vPosition.xyz);
+				// reflexions dir
+				vec3 reflectionDirection1 = normalize(2.0*normal*dot(normal,lightDirection1)-(lightDirection1));
+				vec3 reflectionDirection2 = normalize(2.0*normal*dot(normal,lightDirection2)-(lightDirection2));
+				// diffus
+				float diffu1 = max(dot(normal, lightDirection1), 0.0);
+				float diffu2 = max(dot(normal, lightDirection2), 0.0);
+				// speculars
+				float spec1 = pow(max(dot(reflectionDirection1, eyeDirection), 0.0), sh);
+				float spec2 = pow(max(dot(reflectionDirection2, eyeDirection), 0.0), sh);
+				// metals
+				float metal1 = pow(max(dot(reflectionDirection1, eyeDirection), 0.0),sh*1.5);
+				float metal2 = pow(max(dot(reflectionDirection2, eyeDirection), 0.0),sh*1.5);
+				// sum of terms
+				vec3 l1 = kd*lightC1 *color * diffu1 + 2.0*ks*lightC1 *clamp(5.0*(spec1-metal1),0.0,1.0);
+				vec3 l2 = kd*lightC2 *color * diffu2 + 2.0*ks*lightC2 *clamp(5.0*(spec2-metal2),0.0,1.0);
+				vec3 L = l1+l2 + amb*color;
+				gl_FragColor =  vec4(L,1.0);
+			}
+		</script>
+		
+		<script>
+			//----------------------------------------------------------------------------
+			// MAR 2014 - example 4
+			// author(s) : Cozot, R. and Lamarche, F.
+			// date : 11/8/2014
+			//---------------------------------------------------------------------------- 
+			// custom shader
+			
+			// global vars
+			//----------------------------------------------------------------------------
+			// dom
+			var container, stats;
+			// camera, scene and renderer
+			var camera, scene, renderer;
+			// scene
+			var cube1, cube2, cube3, sphere1, sphere2, sphere3 ;
+			// cameraParam
+			var camParam  = {x:100,y:50,z:100};
+			
+			//my shader
+			var metalShader ;
+			
+			//----------------------------------------------------------------------------
+			function init(){
+				// dom
+				container = document.createElement( 'div' );
+				document.body.appendChild( container );
+				// scene
+				scene = new THREE.Scene();
+				// camera 
+				camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 0.1, 1000 ); 
+				// render
+				renderer = new THREE.WebGLRenderer();
+				renderer.setClearColor(0x202030, 1);
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				// dom mangement
+				container.appendChild( renderer.domElement );
+				// shader
+				//uniforms = {
+				//	time: { type: "f", value: 1.0 },
+				//	resolution: { type: "v2", value: new THREE.Vector2() }
+				//};
+
+				metalShader = new THREE.ShaderMaterial( {
+					uniforms: { 
+						color: { type: "v3", value: new THREE.Vector3(1.0,1.0,1.0) },
+						kd: { type: "f", value: 0.33 },
+						sh: { type: "f", value: 50.0 }
+					},
+					vertexShader: document.getElementById( 'vertexShaderMetal' ).textContent,
+					fragmentShader: document.getElementById( 'fragmentShaderMetal' ).textContent
+				} );
+				// scene
+				// grid
+				scene.add( grid(200,50) );
+				// cube1
+				cube1 = new THREE.Mesh(
+					new THREE.BoxGeometry( 20, 20, 20 ), 
+					new THREE.MeshPhongMaterial( { color: 0x40ffff, specular: 0xFFFFFF, shininess: 50 } )   
+				); 
+				cube1.position.x  = -50 ;
+				cube1.position.y  = 10 ;
+				scene.add( cube1 ); 
+				// cube2
+				cube2 = new THREE.Mesh(
+					new THREE.BoxGeometry( 20, 20, 20 ), 
+					metalShader  
+				); 
+				cube2.position.x  = 0 ;
+				cube2.position.y  = 10 ;
+				scene.add( cube2 ); 
+				// cube3
+				cube3 = new THREE.Mesh(
+					new THREE.BoxGeometry( 20, 20, 20 ), 
+					new THREE.MeshLambertMaterial({color:  0xff40FF } )  
+				); 
+				cube3.position.x  = +50 ;
+				cube3.position.y  = 10 ;
+				scene.add( cube3 ); 	
+				// sphere1
+				sphere1 = new THREE.Mesh( 
+					new THREE.SphereGeometry( 10, 32, 32 ), 
+					new THREE.MeshPhongMaterial( { color: 0x40ffff, specular: 0xFFFFFF, shininess: 50 } )
+				); 
+				sphere1.position.x = 25;
+				// sphere2
+				sphere2 = new THREE.Mesh( 
+					new THREE.SphereGeometry( 10, 32, 32 ), 
+					metalShader
+				); 
+				sphere2.position.y = 25;
+				// sphere3
+				sphere3 = new THREE.Mesh( 
+					new THREE.SphereGeometry( 10, 32, 32 ), 
+					new THREE.MeshLambertMaterial( {color: 0xff40FF} )
+				); 
+				sphere3.position.x = 25;
+				// sphere i: child of cube i
+				cube1.add( sphere1 );				
+				cube2.add( sphere2 );				
+				cube3.add( sphere3 );
+				// light(s)
+				// add subtle ambient lighting
+				var ambientLight = new THREE.AmbientLight(0x000040);
+				scene.add(ambientLight);
+				// green light
+				var directionalLight1 = new THREE.DirectionalLight( 0xffff80 );
+				directionalLight1.position.set( -1, 1, 1 ).normalize();
+				scene.add( directionalLight1 );
+				// red light
+				var directionalLight2 = new THREE.DirectionalLight( 0xff80ff );
+				directionalLight2.position.set( 1, 1, -1).normalize();
+				scene.add( directionalLight2 );		
+				// set camera position
+				camera.position.z = 20; 
+				// stats
+				stats = new Stats();
+				stats.domElement.style.position = 'absolute';
+				stats.domElement.style.top = '0px';
+				container.appendChild( stats.domElement );	
+				// event listener
+				window.addEventListener( 'resize', onWindowResize, false );
+			}
+			// callback functions
+			// window resize
+			function onWindowResize() {
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+				renderer.setSize( window.innerWidth, window.innerHeight );
+			}
+			// animate
+			function animate() {
+				requestAnimationFrame( animate );
+				render();
+				stats.update();
+			}
+			// render
+			function render() {
+				var timer = Date.now() * 0.0005;
+				// rotate the cubes
+				cube1.rotation.y += 0.02; 
+				cube2.rotation.x += 0.01; 
+				cube3.rotation.y -= 0.02; 
+				// rotate the world
+				camera.position.x = Math.cos( timer ) * camParam.x;
+				camera.position.y = camParam.y;
+				camera.position.z = Math.sin( timer ) * camParam.z;
+				camera.lookAt( scene.position );
+				renderer.render( scene, camera );
+			}
+			// init and start
+			init();
+			animate(); 
+		</script>
+	</body>
+</html>

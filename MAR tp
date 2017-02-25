@@ -1,0 +1,13 @@
+1- cube
+2- graph de scene avec kube et sphere (lié sphere et kube) si kube bouge sphere bouge si sphere bouge kube bouge pas
+3- scene de lamber (lumiere)
+4- (kube avec sphere et texture)
+5- shader metal
+
+
+dpkg -i ""
+sudo apt-get -f install
+
+
+sudo apt-get remove unity-editor -y
+

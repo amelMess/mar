@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>MAR 2014 - example 5	by RC&FL</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				font-family: Monospace;
+				background-color: #000000;
+				margin: 0px;
+				overflow: hidden;
+			}
+			#info {
+				color: #fff;
+				position: absolute;
+				top: 10px;
+				width: 100%;
+				text-align: center;
+				z-index: 100;
+				display:block;
+
+			}
+			a { color: skyblue }
+		</style>
+	</head>
+	<body>
+		<script src="threejs/build/three.min.js"></script>
+		<script src="js/loaders/MTLLoader.js"></script>
+		<script src="js/loaders/OBJMTLLoader.js"></script>
+		<script src="js/Detector.js"></script>
+		<script src="js/libs/stats.min.js"></script>
+
+		<script>
+			//----------------------------------------------------------------------------
+			// MAR 2014 - example 5
+			// author(s) : Cozot, R. and Lamarche, F.
+			// date : 11/10/2014
+			//---------------------------------------------------------------------------- 
+			// tp scene
+			
+			// global vars
+			//----------------------------------------------------------------------------
+			// dom
+			var container, stats;
+			// camera, scene and renderer
+			var camera, scene, renderer;
+			// cameraParam
+			var camParam  = {x:0,y:5,z:0};
+			var fpCam = { dx:0.50, dtheta: 0.01, zc: 0.0 , xc: 0.0, theta: 0.0} ;
+			// keyPressed
+			var currentlyPressedKeys = {};
+			//----------------------------------------------------------------------------
+			// detector
+			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
+			// model
+			// callbacks on loading
+			var onProgress = function ( xhr ) {
+				if ( xhr.lengthComputable ) {
+					var percentComplete = xhr.loaded / xhr.total * 100;
+					var percent = Math.round(percentComplete, 2);
+					console.log( percent + '% downloaded' );
+				}
+			};
+			var onError = function ( xhr ) { console.log( 'loading assets error' );};
+			// loader
+			var loader = new THREE.OBJMTLLoader();
+			loader.load( 'assets/scene.obj', 'assets/scene.mtl', function ( object ) {
+				object.position.y = 0;
+				object.name = 'scene';
+				console.log('loader::'+'object:'+object.name+'>'+object.id);
+				//object.castShadow = true ;
+				//object.receiveShadow = true ;
+				scene.add( object );
+				}, onProgress, onError );
+
+			// functions
+			//----------------------------------------------------------------------------
+			function init() {
+				container = document.createElement( 'div' );
+				document.body.appendChild( container );
+				camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 4000 );
+				camera.position.set( camParam.x, camParam.y, camParam.z );
+				scene = new THREE.Scene();
+				// skybox
+				//----------------------------------
+				// textures
+				var path = "assets/maps/";
+				var format = '.jpg';
+				var urls = [
+					path + 'px' + format, path + 'nx' + format,
+					path + 'py' + format, path + 'ny' + format,
+					path + 'pz' + format, path + 'nz' + format
+				];
+				// cube texture
+				var textureCube = THREE.ImageUtils.loadTextureCube( urls );
+
+				// cube shader
+				var shader = THREE.ShaderLib[ "cube" ];
+				shader.uniforms[ 'tCube' ].value = textureCube;
+
+				var material = new THREE.ShaderMaterial( 
+					{
+						fragmentShader: shader.fragmentShader,
+						vertexShader: shader.vertexShader,
+						uniforms: shader.uniforms,
+						side: THREE.BackSide
+					}
+				);
+
+				cube = new THREE.Mesh( new THREE.BoxGeometry( 400, 400, 400), material );
+				cube.name ='sky';
+				scene.add( cube );
+	
+				//----------------------------------------------------------------------------
+				// lights
+				// sun light
+				var sun = new THREE.DirectionalLight( 0xffffff,1.5 );
+				sun.position.set( 1,1, 1 ).normalize();
+				sun.name = 'sunLight';
+				//sun.castShadow = true ;
+				scene.add( sun );
+
+				renderer = new THREE.WebGLRenderer();
+				//renderer.shadowMapEnabled = true ;
+				renderer.setClearColor(0x4040ff, 1);
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				// dom mangement
+				container.appendChild( renderer.domElement );
+				// stats
+				stats = new Stats();
+				stats.domElement.style.position = 'absolute';
+				stats.domElement.style.top = '0px';
+				container.appendChild( stats.domElement );
+				// event listener
+				window.addEventListener( 'resize', onWindowResize, false );
+				// keyboard callbacks 
+				document.onkeydown = handleKeyDown;
+				document.onkeyup = handleKeyUp;				
+				
+				// debug scene
+				scene.traverse(function(o){console.log('object:'+o.name+'>'+o.id);});
+			}
+			// callback functions
+			//----------------------------------------------------------------------------
+			// keyboard event callbacks
+			function handleKeyDown(event) { currentlyPressedKeys[event.keyCode] = true;}
+
+			function handleKeyUp(event) {currentlyPressedKeys[event.keyCode] = false;}
+
+			function handleKeys() {
+				if (currentlyPressedKeys[67]) {
+					// (C) debug
+					// debug scene
+					scene.traverse(function(o){
+						console.log('object:'+o.name+'>'+o.id+'::'+o.type);
+							//o.castShadow = true ;
+							//o.receiveShadow = true ;
+					});
+				}				
+				if (currentlyPressedKeys[68]) {
+					// (D) Right
+					fpCam.theta -= fpCam.dtheta ;
+				}
+				if (currentlyPressedKeys[81]) {
+					// (Q) Left 
+					fpCam.theta += fpCam.dtheta;
+				}
+				if (currentlyPressedKeys[90]) {
+					// (Z) Up
+					var tz = fpCam.zc-fpCam.dx*Math.cos(fpCam.theta);
+					var tx = fpCam.xc-fpCam.dx*Math.sin(fpCam.theta);
+					if ((tz<50)&&(tz>-50)){fpCam.zc = tz;}
+					if ((tx<50)&&(tx>-50)){fpCam.xc =tx;}
+				}
+				if (currentlyPressedKeys[83]) {
+					// (S) Down 
+					var tz = fpCam.zc+fpCam.dx*Math.cos(fpCam.theta);
+					var tx = fpCam.xc+fpCam.dx*Math.sin(fpCam.theta);
+					if ((tz<50)&&(tz>-50)){fpCam.zc = tz;}
+					if ((tx<50)&&(tx>-50)){fpCam.xc = tx;}
+				}
+			}
+			// window resize
+			function onWindowResize() {
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+				renderer.setSize( window.innerWidth, window.innerHeight );
+			}
+			// animate
+			function animate() {
+				requestAnimationFrame( animate );
+				render();
+				stats.update();
+			}
+			// render
+			function render() {
+			    handleKeys();
+				camera.position.x = fpCam.xc ;
+				camera.position.y = 5.0 ;
+				camera.position.z = fpCam.zc ;
+				camera.rotation.y = fpCam.theta;
+				renderer.render( scene, camera );
+			}
+			//----------------------------------------------------------------------------
+			// init and start
+			init();
+			animate();
+
+		</script>
+	</body>
+</html>
