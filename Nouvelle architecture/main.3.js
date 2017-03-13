@@ -162,7 +162,7 @@ function start()
 		}
 		if (currentlyPressedKeys[90]) // (Z) Up
 		{
-			vehicle.goFront(1200) ;
+			vehicle.goFront(1200, 1200) ;
 		}
 		if (currentlyPressedKeys[83]) // (S) Down 
 		{

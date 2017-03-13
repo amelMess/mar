@@ -79,6 +79,7 @@ function start(){
 	//Loader.loadMesh('assets','tree_Zup_02','obj',	RC.scene,'trees',	-340,-340,0,'double');
 	Loader.loadMesh('assets','arrivee_Zup_01','obj',	RC.scene,'decors',	-340,-340,0,'front');
 		
+	var car = Loader.load({filename: 'assets/car01.obj', node: RC.scene, name: 'car', transX:-340}) ;
 
 
 	//	Car
