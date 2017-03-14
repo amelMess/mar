@@ -79,7 +79,6 @@ function start(){
 	//Loader.loadMesh('assets','tree_Zup_02','obj',	RC.scene,'trees',	-340,-340,0,'double');
 	Loader.loadMesh('assets','arrivee_Zup_01','obj',	RC.scene,'decors',	-340,-340,0,'front');
 		
-	var car = Loader.load({filename: 'assets/car01.obj', node: RC.scene, name: 'car', transX:-340}) ;
 
 
 	//	Car
@@ -185,19 +184,19 @@ function start(){
 				console.log('object:'+o.name+'>'+o.id+'::'+o.type);
 			});
 		}				
-		if (currentlyPressedKeys[68]) // (D) Right
+		if (currentlyPressedKeys[68] || currentlyPressedKeys[39]) // (D) Right || Fléche droite
 		{
 			vehicle.turnRight(1000) ;
 		}
-		if (currentlyPressedKeys[81]) // (Q) Left 
+		if (currentlyPressedKeys[81] || currentlyPressedKeys[37]) // (Q) Left || Fléche gauche
 		{		
 			vehicle.turnLeft(1000) ;
 		}
-		if (currentlyPressedKeys[90]) // (Z) Up
+		if (currentlyPressedKeys[90] || currentlyPressedKeys[38]) // (Z) Up || Fléche haut
 		{
 			vehicle.goFront(1200, 1200) ;
 		}
-		if (currentlyPressedKeys[83]) // (S) Down 
+		if (currentlyPressedKeys[83] || currentlyPressedKeys[40]) // (S) Down || Fléche bas
 		{
 			vehicle.brake(100) ;
 		}
@@ -206,30 +205,29 @@ function start(){
 	}
 
 
-	  // Lap display
-	var maxLap = 3;
+	 
+	var maxLap = 5;
 	var lapDisplay = document.createElement('div');
-	lapDisplay.style.position = 'absolute';
-	lapDisplay.style.top = 10 + 'px';
-	lapDisplay.style.right = 10 + 'px';
-	lapDisplay.style.width = 100;
-	lapDisplay.style.height = 80;
-	lapDisplay.style.padding = "10px";
-	lapDisplay.style.backgroundColor = "rgba(0,0,0,0.5)";
-	lapDisplay.style.color = "white";
+	lapDisplay.style.position = 'fixed';
+	lapDisplay.style.top = 10;
+	lapDisplay.style.right = 10;
+	lapDisplay.style.width = 235;
+	lapDisplay.style.height = 22;
+	lapDisplay.style.padding = 10;
+	lapDisplay.style.backgroundColor = "rgba(51, 10, 10, 0.7)";
+	lapDisplay.style.color = "blue";
 	lapDisplay.style.textAlign = "center";
-	lapDisplay.style.fontSize = "30px";
-	lapDisplay.style.fontFamily = "Ubuntu Medium, FreeSans, Trebuchet MS, sans-serif";
+	lapDisplay.style.fontSize = "20px";
 	document.body.appendChild(lapDisplay);
 	
 	var updateLapDisplay = function() {
 		if (vehicle.lapNumber < maxLap) {
-			lapDisplay.innerHTML = "Lap "+vehicle.lapNumber+"/"+maxLap;
+			lapDisplay.innerHTML = "Tour "+vehicle.lapNumber+" / "+"Tour restant "+(maxLap-vehicle.lapNumber);
+			//lapDisplay.innerHTML = "Tour restant "+(maxLap-vehicle.lapNumber);
 		} else if (vehicle.lapNumber == maxLap) {
-			lapDisplay.innerHTML = "Last lap";
+			lapDisplay.innerHTML = "Dernier tour";
 		} else {
-			lapDisplay.innerHTML = "You win !";
-			
+			lapDisplay.innerHTML = "Game Over! YOU WIIIN";
 			if (!vehicle.endDate) {
 				vehicle.endDate = new Date();
 			}
@@ -238,20 +236,19 @@ function start(){
 
 	updateLapDisplay();
 
-	 // Time display
-	/*var timeDisplay = document.createElement('div');
+	 
+	var timeDisplay = document.createElement('div');
 	timeDisplay.style.position = 'absolute';
-	timeDisplay.style.top = 10 + 'px';
-	timeDisplay.style.left = 10 + 'px';
+	timeDisplay.style.top = 10;
+	timeDisplay.style.left = 10;
 	timeDisplay.style.right = null;
-	timeDisplay.style.width = 200;
-	timeDisplay.style.height = 35;
-	timeDisplay.style.padding = "10px";
-	timeDisplay.style.backgroundColor = "rgba(0,0,0,0.5)";
-	timeDisplay.style.color = "white";
+	timeDisplay.style.width = 115;
+	timeDisplay.style.height = 32;
+	timeDisplay.style.padding = 10;
+	timeDisplay.style.backgroundColor = "rgba(51, 10, 10, 0.7)";
+	timeDisplay.style.color = "blue";
 	timeDisplay.style.textAlign = "center";
-	timeDisplay.style.fontSize = "30px";
-	timeDisplay.style.fontFamily = "Ubuntu Medium, FreeSans, Trebuchet MS, sans-serif";
+	timeDisplay.style.fontSize = "25px";
 	document.body.appendChild(timeDisplay);
 	
 	var updateTimeDisplay = function() {
@@ -268,8 +265,8 @@ function start(){
 		}
 		
 		// get values
-		var ms = time % 1000;
-		time = Math.floor(time / 1000);
+		var ms = time % 100;
+		time = Math.floor(time / 100);
 		var sec = (time % 60);
 		time = Math.floor(time / 60);
 		var minutes = time;
@@ -277,11 +274,11 @@ function start(){
 		// produce output
 		var output = ((minutes < 10) ? "0" : "") + minutes;
 		output += ":" + ((sec < 10) ? "0" : "") + sec;
-		output += "." + ((ms < 100) ? "0" + ((ms < 10) ? "0" : "") : "") + ms;
+		output += ":" + ((ms < 10) ? "0" : "") + ms;
 		timeDisplay.innerHTML = output;
 	};
       
-	updateTimeDisplay();*/
+	updateTimeDisplay();
 
 	//	window resize
 	function  onWindowResize() {RC.onWindowResize(window.innerWidth,window.innerHeight);}
@@ -316,7 +313,7 @@ function start(){
 		 var activePlaneName = NAV.planeSet[NAV.active].name;
 		vehicle.updateLap(activePlaneName);
         updateLapDisplay();
-		//updateTimeDisplay();
+		updateTimeDisplay();
 
 
 		// Camera

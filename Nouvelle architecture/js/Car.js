@@ -26,7 +26,7 @@ THREE.Car = function () {
 
 	// car "feel" parameters
 
-	this.MAX_SPEED = 2200;
+	this.MAX_SPEED = 3000;
 	this.MAX_REVERSE_SPEED = -1500;
 
 	this.MAX_WHEEL_ROTATION = 0.6;
